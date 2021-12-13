@@ -8,7 +8,7 @@ sudo mount -t ramfs ramfs /mnt/storage-ram
 
 ## helpful commands
 
-### list info abous disk
+### list info about disk
 
 ```Bash
 sudo fdisk -l [ /dev/... ]
@@ -28,13 +28,20 @@ sudo integritysetup status { mapper-name }
 sudo mkdir -pv /mnt/storage-ram/bck4
 sudo chown -R vitalik:vitalik /mnt/storage-ram/bck4
 
-_bck4_ikey=/mnt/storage-ram/bck4/bck4-ikey
-_bck4_header=/mnt/storage-ram/bck4/bck4-header
-_bck4_key=/mnt/storage-ram/bck4/bck4-key
-_bck4_imapper=bck4-int
-_bck4_emapper=bck4-enc
-_bck4_mount=/mnt/bck4
-echo "ikey: ${_bck4_ikey}; header: ${_bck4_header}; key: ${_bck4_key}; imapper: ${_bck4_imapper}; emapper: ${_bck4_emapper}; mount: ${_bck4_mount};"
+_bck_dev=/dev/sdd1 \
+    && _bck4_ikey=/mnt/storage-ram/bck4/bck4-ikey \
+    && _bck4_header=/mnt/storage-ram/bck4/bck4-header \
+    && _bck4_key=/mnt/storage-ram/bck4/bck4-key \
+    && _bck4_imapper=bck4-int \
+    && _bck4_emapper=bck4-enc \
+    && _bck4_mount=/mnt/bck7
+echo "dev: ${_bck_dev}" &&
+    echo "ikey: ${_bck4_ikey}" &&
+    echo "imapper: ${_bck4_imapper}" &&
+    echo "header: ${_bck4_header}" &&
+    echo "key: ${_bck4_key}" &&
+    echo "emapper: ${_bck4_emapper}" &&
+    echo "mount: ${_bck4_mount}"
 
 # generate random data
 sudo dd if=/dev/urandom bs=32 count=1 of=$_bck4_ikey
@@ -42,8 +49,8 @@ sudo dd if=/dev/urandom bs=512 count=1 of=$_bck4_key
 sudo dd if=/dev/zero bs=16777216 count=1 of=$_bck4_header
 
 # format and open integration layer
-sudo integritysetup --debug format /dev/sdg1 --tag-size=32 --integrity=hmac-sha256 --integrity-key-file=$_bck4_ikey --integrity-key-size=32 --sector-size=4096
-sudo integritysetup --debug open /dev/sdg1 $_bck4_imapper --integrity=hmac-sha256 --integrity-key-file=$_bck4_ikey --integrity-key-size=32
+sudo integritysetup --debug format $_bck_dev --tag-size=32 --integrity=hmac-sha256 --integrity-key-file=$_bck4_ikey --integrity-key-size=32 --sector-size=4096
+sudo integritysetup --debug open $_bck_dev $_bck4_imapper --integrity=hmac-sha256 --integrity-key-file=$_bck4_ikey --integrity-key-size=32
 
 # format encryption layer
 sudo cryptsetup --debug luksFormat --cipher=capi:xts(twofish)-essiv:sha256 --key-size=256 --pbkdf=argon2id --iter-time=16000 --hash=sha512 --label=bck4-vault --key-slot=4 --use-urandom --key-file=$_bck4_key --header=$_bck4_header --sector-size=4096 /dev/mapper/$_bck4_imapper
